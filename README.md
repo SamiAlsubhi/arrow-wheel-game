@@ -21,7 +21,7 @@ A playable 3D model of the arrow-and-wheel prize machine. Everything is drawn in
 - **Acrylic plane:** the wheel, the arrow and the two clear side plates are 8 mm acrylic in one plane, as real 3D shapes. Their edges glow with the LED colour and their faces reflect the room, so they react to the camera.
 - **Behind:** the backlit panel shows through the wheel's slots, and the printed board (bow, arcs, stars) is seen through the clear plates.
 - **In front:** the printed cabinet face with the round window.
-- **Slot outline:** traced from the video (median of all 8 slots): a pointed roof, flaring sides, and two steps near the rim where the arrowhead's corners sit.
+- **Slot outline:** measured on the video frame: roof lines meeting under the badge, the widest shoulders, then the hammer-head spoke ends narrowing to the gate at the rim. Spokes are each slot's clockwise roof line running on to the centre disc.
 - **Arrow:** the acrylic has stepped edges on its pointed head, with the printed sticker inside it with a small margin.
 
 ## How hit / miss works
@@ -30,7 +30,7 @@ There's no hit tolerance. After the wheel stops, the arrow is driven upward unti
 - If the head seats down in the slot, it's in: rainbow lights, a fanfare and confetti.
 - If it's misaligned, the head jams against the slot's slanted roof, the slot edge or a spoke, stops right there, and the lights go red as on the real machine.
 
-With the traced shapes the arrow goes in when the slot is within about ±1.2° of the arrow, a window of roughly 85 ms at the measured 28.29°/s. About 2° off, the head corners catch on the rim steps and the arrow jams around 74, which matches the miss in the video (79).
+The slot's narrowest point (the hammer-head gate near the rim) is ±69 and the arrow's acrylic head is ±65, both measured in the video's pixels on the same slot, so there's about 4 units of clearance per side. The arrow goes in only when the slot is within about ±0.75° of the arrow, a window of roughly 53 ms at the measured 28.29°/s. Anything further off catches the head's corners at the rim gate and stops the arrow at a stroke of about 74, as in the video, where a stop 0.9° off missed and the arrow sat at 79.
 
 ## Develop
 

@@ -4,21 +4,20 @@
 // ───────────── wheel (acrylic, print goes right to the cut edges) ─────────────
 export const R = 325;                 // visible wheel radius (dark rim of the window)
 export const RW = R + 6;              // real disc radius, the outer edge hides behind the cabinet face
-export const TARGET_R = 190;          // badge centres (measured on the frame overlay)
-export const BADGE_R = 59;            // badges are separate raised discs on the wheel's face: they overlap the slot points
+export const TARGET_R = 188;          // badge centres (measured on the unwarped frame)
+export const BADGE_R = 63;            // badges are separate raised discs on the wheel's face: they overlap the slot points
 export const BADGE_T = 4;             // how far they stick out
 export const CENTER_R = 102;
 
-// Slot (cut-out) under each target, traced in polar coordinates over all 8 slots of the frame
-// (median of 8, unwarped): [half-angle°, radius]. A shallow point, flaring sides, then two
-// steps where the spoke ends flare (they hold the arrowhead's corners when it seats).
-export const OPENING = [
-  [0, 230], [11, 252],                      // pointed roof
-  [16.1, 298.6],                            // straight flaring side
-  [15.25, 299.4], [15.2, 309.4],            // first step
-  [12.8, 311.2], [12.6, 314],               // second step, then parallel to the rim
-];
-export const OPENING_RIM_HALF = 12.6; // from r 314 out to the rim the slot keeps this half-angle
+// Slot (cut-out) under each target. Measured on B's slot — the one in the same part of the video frame as
+// the arrow, so both are measured with the same camera perspective (base-frame px ÷ 0.974 for the camera's
+// horizontal squash). t = distance from the wheel centre along the slot axis, h = half-width:
+//  - roof: straight lines (t 276 → ±67, t 288 → ±80) meeting under the badge, so the point is hidden
+//  - shoulder: widest part, ±81 around t 290–296
+//  - hammer-head: the spoke ends flare in to the ±69.3 gate at t 306, then straight out to the rim
+// The arrow's acrylic head is ±65 (63.5 px), so the gate leaves ~4 per side: about ±0.75° of wheel rotation.
+// In the video a stop 0.9° off missed, which this reproduces.
+export const SLOT = { apexT: 211, roofT: 290, roofH: 81, shoulderT: 296, shoulderH: 81, gateT: 306, gateH: 69.3 };
 
 export const TARGETS = [            // clockwise from B (B straight above the arrow at rotation 0)
   { label: 'B', fill: '#c9302a', rim: '#7a1512', glyph: '#f7c51c' },
@@ -37,19 +36,20 @@ export const ARROW_ALIGN_DEG = 90;
 // ───────────── arrow (acrylic with a printed sticker inside) ─────────────
 export const ARROW = {
   // printed sticker (straight edges)
-  tip: -355, headCorner: -406, headBar: -414, headHalf: 61,
+  tip: -355, headCorner: -406, headBar: -414, headHalf: 62.7,   // printed head: 405–528 px wide
   shaftHalf: 15, shaftEnd: -712,
   fletchTop: -586, fletchBottom: -690, fletchOut: 48,
   // acrylic piece around it: stepped head edges from 13 above the printed tip to the printed corners
-  acrTip: -342, acrHalf: 61, acrSteps: 9, acrBottom: -724,
+  acrTip: -342, acrHalf: 65, acrSteps: 9, acrBottom: -724,      // acrylic: 403–530 px wide (outermost steps)
 };
 export const ARROW_TRAVEL = 79;       // tip 1018 → 939 px: where the missed arrow sat in the video
-export const ARROW_SEAT = 109.5;      // full stroke: acrylic tip 2.5 short of the slot's point when lined up
-export const ARROW_DRIVE_S = 1.10;    // rest → full stroke (rise measured: 79 px in ~0.8 s)
+export const ARROW_SEAT = 150;        // full stroke if nothing stops it (a lined-up head slides up into the roof's V)
+export const ARROW_WIN_AT = 120;      // past the rim gate and seated in the V = in
+export const ARROW_DRIVE_S = 1.50;    // rest → full stroke (rise speed measured: 79 px in ~0.8 s)
 
 // ───────────── panels ─────────────
 export const PANEL_TOP = { x0: -360, y0: 402, x1: 360, y1: -304 };   // printed cabinet face around the window
-export const CHANNEL = { half: 64, bottom: -806 };                    // gap between the clear side plates
+export const CHANNEL = { half: 68, bottom: -806 };                    // gap between the clear side plates
 export const PLATES = { x: 352, top: -304, bottom: -806, arcR: R + 8 }; // clear acrylic side plates
 export const BOARD = { x0: -352, y0: -290, x1: 352, y1: -806 };      // printed board behind the clear plates
 

@@ -1,7 +1,7 @@
 // Game timing and rules, driven by the timeline measured from the video.
 // Hit or miss is decided physically: the arrow is driven up until its head touches the wheel.
 import {
-  SPIN_DEG_PER_S, STOP_COAST_S, STOP_COAST_SPEED, SPINUP_S, ARROW_SEAT, ARROW_DRIVE_S,
+  SPIN_DEG_PER_S, STOP_COAST_S, STOP_COAST_SPEED, SPINUP_S, ARROW_SEAT, ARROW_WIN_AT, ARROW_DRIVE_S,
   ARROW_RISE_DELAY, JUDGE_AT, RED_HOLD, ARROW_DOWN_AT, CHASE_S, CHANNEL_HUE_PERIOD,
   HOLE_B_DEG, LABELS, ARROW_ALIGN_DEG, LIME, RED,
 } from './constants.js';
@@ -51,7 +51,7 @@ export function createGame() {
         st.mode = 'stopped'; st.stopAt = t; st.plays++; st.seatedAt = -1; st.jamAt = -1;
         const h = nearestSlot(st.phi); st.offset = h.diff; st.label = LABELS[h.k];
         st.contact = contactTravel(st.phi, ARROW_SEAT);            // real collision against the slot / spoke outlines
-        st.win = st.contact >= ARROW_SEAT - 3;                     // head seated down in the slot
+        st.win = st.contact >= ARROW_WIN_AT;                        // got through the rim gate and seated in the slot
         if (st.win) st.wins++;
       }
     } else if (st.mode === 'stopped') {

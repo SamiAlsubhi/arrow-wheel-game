@@ -1,7 +1,7 @@
 // Native drawing (Canvas 2D → textures) of every printed surface. No photos.
 // Each printed board also gets a "light" texture: R = how much the LED light tints it, G = how much it glows.
-import { R, RW, TARGET_R, BADGE_R, CENTER_R, TARGETS, PANEL_TOP, BOARD, CHANNEL, PLATES, ARROW } from './constants.js';
-import { P, slotPolygon, arrowOutline, plateOutline } from './geometry.js';
+import { R, RW, SLOT, TARGET_R, BADGE_R, CENTER_R, TARGETS, PANEL_TOP, BOARD, CHANNEL, PLATES, ARROW } from './constants.js';
+import { P, slotPt, slotPolygon, arrowOutline, plateOutline } from './geometry.js';
 
 const D2R = Math.PI / 180;
 const FONT = '"Arial Rounded MT Bold", "Arial Black", "Helvetica Neue", sans-serif';
@@ -48,19 +48,33 @@ export function drawWheel() {
     g.lineWidth = 20 + (j % 3) * 6; g.strokeStyle = j % 2 ? 'rgba(70,120,210,.28)' : 'rgba(8,18,60,.35)'; g.stroke();
   }
   g.restore();
-  // pinwheel blades between the slots
-  for (let s = 0; s < 8; s++) {
-    const th = 90 + 45 * s + 22.5;
-    const pts = [P(th - 9.5, RW + 4), P(th + 9.5, RW + 4), P(th + 9, 250), P(th - 15, 116), P(th - 28, 116), P(th - 9, 250)];
-    poly(g, pts);
-    const bg2 = g.createLinearGradient(...P(th, R), ...P(th - 20, 116)); bg2.addColorStop(0, '#16307a'); bg2.addColorStop(1, '#11266a');
-    g.fillStyle = bg2; g.fill(); g.lineJoin = 'round'; g.lineWidth = 3; g.strokeStyle = '#dbe3f7'; g.stroke();
+  // pinwheel spokes: the roof line on each slot's clockwise side runs on past the hidden point, under the badge,
+  // to the centre disc (the other roof line stops at the badge) — that is what tilts the spokes on the real wheel
+  const spokeLines = [];
+  for (let k = 0; k < 8; k++) {
+    const deg = 90 + 45 * k, q = slotPt(deg, 0, SLOT.apexT);
+    for (const sgn of [1]) {
+      const a = slotPt(deg, sgn * SLOT.roofH, SLOT.roofT), dx = q[0] - a[0], dy = q[1] - a[1];
+      let s1 = 1; while (Math.hypot(a[0] + dx * s1, a[1] + dy * s1) > CENTER_R + 4 && s1 < 4) s1 += 0.005;
+      spokeLines.push([a, [a[0] + dx * s1, a[1] + dy * s1]]);
+    }
   }
+  // the blade itself: from slot k's continuing line, round the rim, to slot k+1's other roof edge and its hidden point
+  for (let k = 0; k < 8; k++) {
+    const deg = 90 + 45 * k, nd = deg + 45, S = SLOT, tOut = Math.sqrt((RW + 30) ** 2 - S.gateH ** 2);
+    const pts = [spokeLines[k][1], spokeLines[k][0], slotPt(deg, S.shoulderH, S.shoulderT), slotPt(deg, S.gateH, S.gateT), slotPt(deg, S.gateH, tOut),
+      slotPt(nd, -S.gateH, tOut), slotPt(nd, -S.gateH, S.gateT), slotPt(nd, -S.shoulderH, S.shoulderT), slotPt(nd, -S.roofH, S.roofT), slotPt(nd, 0, S.apexT)];
+    poly(g, pts);
+    const bg2 = g.createLinearGradient(...slotPt(deg + 22.5, 0, R), ...spokeLines[k][1]); bg2.addColorStop(0, '#173383'); bg2.addColorStop(1, '#10276b');
+    g.fillStyle = bg2; g.fill();
+  }
+  g.lineCap = 'round';
+  for (const [w, c] of [[9, '#0a1230'], [5, '#a9b8d8']]) for (const [a, b] of spokeLines) { g.beginPath(); g.moveTo(...a); g.lineTo(...b); g.lineWidth = w; g.strokeStyle = c; g.stroke(); }
   for (let i = 0; i < 46; i++) { const a = rand() * 360, r = 110 + rand() * 200, [x, y] = P(a, r); star(g, x, y, 2 + rand() * 4, 0.55 + rand() * 0.4); }
   // white printed border running along every cut edge (the cut itself is the 3D shape)
   g.lineJoin = 'miter'; g.miterLimit = 8;
-  for (let k = 0; k < 8; k++) { poly(g, slotPolygon(k)); g.lineWidth = 22; g.strokeStyle = '#0a1230'; g.stroke(); }
-  for (let k = 0; k < 8; k++) { poly(g, slotPolygon(k)); g.lineWidth = 16; g.strokeStyle = '#eef2fb'; g.stroke(); }
+  for (let k = 0; k < 8; k++) { poly(g, slotPolygon(k)); g.lineWidth = 16; g.strokeStyle = '#0a1230'; g.stroke(); }
+  for (let k = 0; k < 8; k++) { poly(g, slotPolygon(k)); g.lineWidth = 12; g.strokeStyle = '#a9b8d8'; g.stroke(); }
   // dark centre disc
   const cg = g.createRadialGradient(-20, 20, 10, 0, 0, CENTER_R);
   cg.addColorStop(0, '#16285e'); cg.addColorStop(1, '#0b1536');
@@ -195,14 +209,15 @@ export function drawEdgeGlow(points, pad = 16) {
 // ───────────────────────────── one raised target badge (its own disc; glyph upright, top = towards the wheel centre) ─────────────────────────────
 export function drawBadge(t, screw) {
   const r = BADGE_R, L = layer(-r, r, r, -r, 4), g = L.g;
-  g.beginPath(); g.arc(0, 0, r, 0, Math.PI * 2); g.fillStyle = '#eef1f8'; g.fill();
-  g.beginPath(); g.arc(0, 0, r - 5, 0, Math.PI * 2); g.fillStyle = '#c9cfdd'; g.fill();
+  g.beginPath(); g.arc(0, 0, r, 0, Math.PI * 2); g.fillStyle = '#1a2340'; g.fill();
+  g.beginPath(); g.arc(0, 0, r - 1.5, 0, Math.PI * 2); g.fillStyle = '#b4c3e0'; g.fill();
+  g.beginPath(); g.arc(0, 0, r - 6, 0, Math.PI * 2); g.fillStyle = '#8a9bc0'; g.fill();
   g.beginPath(); g.arc(0, 0, r - 8, 0, Math.PI * 2); g.fillStyle = t.rim; g.fill();
   const bg = g.createRadialGradient(-12, 14, 4, 0, 0, r - 11);
   bg.addColorStop(0, shade(t.fill, 0.22)); bg.addColorStop(1, t.fill);
   g.beginPath(); g.arc(0, 0, r - 11, 0, Math.PI * 2); g.fillStyle = bg; g.fill();
   g.beginPath(); g.arc(0, 0, r - 17, 0, Math.PI * 2); g.lineWidth = 2.2; g.strokeStyle = 'rgba(255,255,255,.55)'; g.stroke();
-  glyph(g, t.label, 0, -2, 0, 66, t.glyph, '#14162c');
+  glyph(g, t.label, 0, -2, 0, 78, t.glyph, '#14162c');
   if (screw) { g.beginPath(); g.arc(0, r - 4, 5, 0, Math.PI * 2); g.fillStyle = '#a3abbd'; g.fill(); g.lineWidth = 1.5; g.strokeStyle = '#4a5268'; g.stroke(); }
   return L;
 }

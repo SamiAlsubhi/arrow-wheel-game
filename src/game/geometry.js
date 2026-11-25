@@ -1,24 +1,22 @@
 // Exact outlines shared by the drawing, the 3D acrylic pieces and the collision test.
-import { R, RW, OPENING, OPENING_RIM_HALF, ARROW, PLATES, CHANNEL } from './constants.js';
+import { R, RW, SLOT, ARROW, PLATES, CHANNEL } from './constants.js';
 
 const D2R = Math.PI / 180;
 // screen angle θ (clockwise from +x, as seen) + radius → world point (y up)
 export const P = (deg, r) => [r * Math.cos(-deg * D2R), r * Math.sin(-deg * D2R)];
 
-// one slot, from the rim on its anticlockwise side, in to the point, back out (screen-clockwise order)
+// point on slot k's own axes: t along the axis (outwards), h across it (+h = screen-clockwise side)
+export function slotPt(deg, h, t) { const [ax, ay] = P(deg, 1), [nx, ny] = P(deg + 90, 1); return [ax * t + nx * h, ay * t + ny * h]; }
+const RIM_T = r => Math.sqrt(r * r - SLOT.gateH * SLOT.gateH);
+// one slot, from the rim on its anticlockwise side, in to the (hidden) point, back out
 function slotProfile(deg, rOut) {
-  const pts = [P(deg - OPENING_RIM_HALF, rOut)];
-  for (let i = OPENING.length - 1; i >= 0; i--) pts.push(P(deg - OPENING[i][0], OPENING[i][1]));
-  for (let i = 1; i < OPENING.length; i++) pts.push(P(deg + OPENING[i][0], OPENING[i][1]));
-  pts.push(P(deg + OPENING_RIM_HALF, rOut));
-  return pts;
+  const S = SLOT, tOut = RIM_T(rOut);
+  const side = [[S.gateH, tOut], [S.gateH, S.gateT], [S.shoulderH, S.shoulderT], [S.roofH, S.roofT]];
+  return [...side.map(([h, t]) => slotPt(deg, -h, t)), slotPt(deg, 0, S.apexT), ...side.reverse().map(([h, t]) => slotPt(deg, h, t))];
 }
-// closed slot polygon (extends past the rim) for collision
-export function slotPolygon(k, phi = 0) {
-  const deg = 90 + 45 * k + phi, pts = slotProfile(deg, RW + 30);
-  for (let a = OPENING_RIM_HALF; a >= -OPENING_RIM_HALF; a -= 2) pts.push(P(deg + a, RW + 30));
-  return pts;
-}
+export const SLOT_RIM_HALF_DEG = Math.asin(SLOT.gateH / RW) * 180 / Math.PI;
+// closed slot polygon (extends past the rim) for collision and printing
+export function slotPolygon(k, phi = 0) { return slotProfile(90 + 45 * k + phi, RW + 30); }
 
 // outline of the acrylic wheel (rotation 0): the disc edge with the 8 slots cut in from the rim
 export function wheelOutline() {
@@ -26,7 +24,7 @@ export function wheelOutline() {
   for (let k = 0; k < 8; k++) {
     const deg = 90 + 45 * k;
     pts.push(...slotProfile(deg, RW));
-    for (let a = deg + OPENING_RIM_HALF + 1; a < deg + 45 - OPENING_RIM_HALF; a += 1) pts.push(P(a, RW));
+    for (let a = deg + SLOT_RIM_HALF_DEG + 1; a < deg + 45 - SLOT_RIM_HALF_DEG; a += 1) pts.push(P(a, RW));
   }
   return pts;   // screen-clockwise = world clockwise
 }
@@ -69,7 +67,7 @@ function inside(pts, x, y) {
 
 // the acrylic outline above the bottom of the head, sampled densely (this is what can hit the wheel)
 const HEAD_SAMPLES = (() => {
-  const o = arrowOutline().filter(([, y]) => y >= ARROW.headCorner - 120), pts = [];
+  const o = arrowOutline().filter(([, y]) => y >= ARROW.headCorner - 160), pts = [];
   for (let i = 0; i < o.length - 1; i++) {
     const [x1, y1] = o[i], [x2, y2] = o[i + 1], len = Math.hypot(x2 - x1, y2 - y1);
     for (let t = 0; t <= len; t += 0.4) pts.push([x1 + ((x2 - x1) * t) / len, y1 + ((y2 - y1) * t) / len]);
